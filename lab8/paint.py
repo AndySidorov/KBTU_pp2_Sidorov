@@ -18,6 +18,8 @@ def main():
             if event.type == pygame.QUIT:
                 return
             if event.type == pygame.KEYDOWN:
+                if mode == "erase":
+                    screen.blit(layer,(0,0))
                 if event.key == pygame.K_p:
                     mode = "pen"
                 elif event.key == pygame.K_e:
@@ -51,8 +53,6 @@ def main():
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     pressed = False
-                    if mode == "rect" or mode == "circle":
-                        layer.blit(screen,(0,0))
             if event.type == pygame.MOUSEMOTION:
                 x2 = event.pos[0]
                 y2 = event.pos[1]
@@ -60,7 +60,7 @@ def main():
             pygame.draw.line(screen, color, (x1,y1), (x2,y2))
         if not pressed and mode == "erase":
             screen.blit(layer,(0,0))
-            pygame.draw.circle(screen, color, (x2, y2), size)    
+            pygame.draw.circle(screen, color, (x2, y2), size)
         if pressed and mode == "erase":
             pygame.draw.circle(screen, color, (x2, y2), size)
             layer.blit(screen,(0,0))
