@@ -1,82 +1,77 @@
-import pygame
-def draw(screen, index, start, end, size, color, shape):
-    c1 = max(0, min(255,2*index-256))
-    c2 = max(0, min(255,2*index))
-    if color == "red":
-        paint = (c2,c1,c1)
-    if color == "green":
-        paint = (c1,c2,c1)
-    if color == "blue":
-        paint = (c1,c1,c2)
-    if color == "white":
-        paint = (c2,c2,c2)
-    if end[2] == -1:
-        paint = ((0,0,0))
-    dx = start[0] - end[0]
-    dy = start[1] - end[1]
-    it = max(abs(dx), abs(dy))
-    for i in range(it):
-        progress = 1.0 * i / it
-        aprogress = 1 - progress
-        x = int(aprogress * start[0] + progress * end[0])
-        y = int(aprogress * start[1] + progress * start[1])
-        if shape == "circle":
-            pygame.draw.circle(screen, paint, (x, y), size)
-        elif shape == "rect":
-            pygame.draw.rect(screen, paint, pygame.Rect(x - size, y - size, size * 2, size * 2))
+import pygame, math
 def main():
     pygame.init()
     pygame.display.set_caption("Paint")
-    screen = pygame.display.set_mode((600,600))
+    screen = pygame.display.set_mode((800,600))
+    layer = pygame.Surface((800,600))
     clock = pygame.time.Clock()
-    points = []
-    erase = []
-    shape = "circle"
-    color = "red"
-    mode = 1
-    size = 15
+    x1 = 0
+    y1 = 0
+    pressed = False
+    mode = ""
+    color = (0,0,0)
+    size = 10
     while True:
-        screen.fill((0,0,0))
-        pressed = pygame.key.get_pressed()
-        alt = pressed[pygame.K_LALT] or pressed[pygame.K_RALT]
-        ctrl = pressed[pygame.K_LCTRL] or pressed[pygame.K_RCTRL]
+        x2 = x1
+        y2 = y1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w and ctrl:
-                    return
-                if event.key == pygame.K_F4 and alt:
-                    return
-                if event.key == pygame.K_ESCAPE:
-                    return
-                if event.key == pygame.K_1:
-                    color = "red"
-                elif event.key == pygame.K_2:
-                    color = "green"
-                elif event.key == pygame.K_3:
-                    color = "blue"
-                elif event.key == pygame.K_4:
-                    color = "white"
+                if event.key == pygame.K_p:
+                    mode = "pen"
                 elif event.key == pygame.K_e:
-                    mode *= -1
-                if event.key == pygame.K_LEFT:
-                    shape = "circle"
-                elif event.key == pygame.K_RIGHT:
-                    shape = "rect"
+                    mode = "erase"
+                    layer.blit(screen,(0,0))
+                elif event.key == pygame.K_r:
+                    mode = "rect"
+                elif event.key == pygame.K_c:
+                    mode = "circle"
+                if event.key == pygame.K_1:
+                    color = (255,0,0)
+                elif event.key == pygame.K_2:
+                    color = (0,255,0)
+                elif event.key == pygame.K_3:
+                    color = (0,0,255)
+                elif event.key == pygame.K_4:
+                    color = (255,255,255)
+                elif event.key == pygame.K_5:
+                    color = (0,0,0)
+                if event.key == pygame.K_UP and size < 100:
+                    size += 10
+                elif event.key == pygame.K_DOWN and size > 10:
+                    size -= 10
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    size = min(200, size + 1)
-                if event.button == 3:
-                    size = max(1, size - 1)
+                    pressed = True
+                    if mode == "rect" or mode == "circle":
+                        q1 = x2
+                        q2 = y2
+                        layer.blit(screen,(0,0))
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    pressed = False
+                    if mode == "rect" or mode == "circle":
+                        layer.blit(screen,(0,0))
             if event.type == pygame.MOUSEMOTION:
-                pos = [event.pos[0]] + [event.pos[1]] + [mode]
-                points.append(pos)
-                points = points[-256:] 
-        i = 0
-        while i < len(points) - 1:
-            draw(screen, i, points[i], points[i+1], size, color, shape)
-            i += 1
+                x2 = event.pos[0]
+                y2 = event.pos[1]
+        if pressed and mode == "pen":
+            pygame.draw.line(screen, color, (x1,y1), (x2,y2))
+        if not pressed and mode == "erase":
+            screen.blit(layer,(0,0))
+            pygame.draw.circle(screen, color, (x2, y2), size)    
+        if pressed and mode == "erase":
+            pygame.draw.circle(screen, color, (x2, y2), size)
+            layer.blit(screen,(0,0))
+        if pressed and mode == "rect":
+            screen.blit(layer,(0,0))
+            pygame.draw.rect(screen, color, pygame.Rect(min(q1,x2), min(q2,y2), abs(q1-x2), abs(q2-y2)))
+        if pressed and mode == "circle":
+            screen.blit(layer,(0,0))
+            pygame.draw.circle(screen, color, (q1,q2), math.sqrt((q1-x2)**2+(q2-y2)**2))
+        x1 = x2
+        y1 = y2
         pygame.display.update()
         clock.tick(60)
 main()
